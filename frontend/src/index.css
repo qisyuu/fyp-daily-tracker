@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        /* Daily Tracker palette — warm cream + burgundy + soft blush */
+        --background: 40 33% 98%;            /* #FCFBF9 warm cream */
+        --foreground: 358 18% 14%;           /* #2B1F20 deep brown-black */
+
+        --card: 0 0% 100%;
+        --card-foreground: 358 18% 14%;
+
+        --popover: 0 0% 100%;
+        --popover-foreground: 358 18% 14%;
+
+        --primary: 348 66% 33%;              /* #8B1C31 burgundy */
+        --primary-foreground: 0 0% 100%;
+
+        --secondary: 350 38% 74%;            /* #D5A4AB blush */
+        --secondary-foreground: 358 18% 14%;
+
+        --muted: 350 50% 96%;                /* #FDF5F6 soft blush bg */
+        --muted-foreground: 354 6% 58%;      /* #9A8B8D */
+
+        --accent: 350 50% 96%;
+        --accent-foreground: 348 66% 33%;
+
+        --destructive: 0 70% 47%;
+        --destructive-foreground: 0 0% 100%;
+
+        --border: 350 18% 90%;               /* #EAE0E2 */
+        --input: 350 18% 90%;
+        --ring: 348 66% 33%;
+
+        --sidebar: 350 50% 96%;              /* same blush */
+        --sidebar-foreground: 358 18% 14%;
+
+        --chart-1: 348 66% 33%;
+        --chart-2: 350 38% 74%;
+        --chart-3: 30 60% 50%;
+        --chart-4: 122 39% 33%;
+        --chart-5: 24 100% 50%;
+
+        --radius: 0.75rem;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    html, body {
+        @apply bg-background text-foreground;
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    .font-brand {
+        font-family: 'Playfair Display', Georgia, serif;
+        letter-spacing: 0.01em;
+    }
+}
+
+@layer base {
+    [data-debug-wrapper="true"] {
+        display: contents !important;
+    }
+}
+
+/* Utility classes used across pages */
+.dt-shadow-soft {
+    box-shadow: 0 1px 2px rgba(43, 31, 32, 0.04), 0 4px 16px rgba(139, 28, 49, 0.06);
+}
+
+.dt-table-header {
+    background: hsl(var(--muted));
+    color: hsl(var(--primary));
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
