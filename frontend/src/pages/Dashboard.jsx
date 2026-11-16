@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
     Users, UserCheck, UserX, Clock, FileText, Palmtree,
-    Calendar as CalendarIcon, ArrowRight, Sparkles
+    Calendar as CalendarIcon, ArrowRight, Sparkles,
+    X, ChevronRight
 } from "lucide-react";
 import { api, formatApiError } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,10 +11,10 @@ import { toast } from "sonner";
 import "./Dashboard.css";
 
 const STAT_TILES = [
-    { key: "total_staff",        label: "Total Staff",          accent: "var(--c-blush)",  Icon: Users,     iconBg: "#FDECEF", iconColor: "#8B1C31" },
-    { key: "present_today",      label: "Present Today",        accent: "#2E7D32",         Icon: UserCheck, iconBg: "#E6F4EA", iconColor: "#2E7D32" },
-    { key: "absent_today",       label: "Absent Today",         accent: "#C62828",         Icon: UserX,     iconBg: "#FDECEF", iconColor: "#C62828" },
-    { key: "leave_today",        label: "On Leave Today",       accent: "#F57F17",         Icon: Clock,     iconBg: "#FFF4E5", iconColor: "#B26A00" },
+    { key: "total_staff",        label: "Total Staff",          accent: "var(--c-blush)",  Icon: Users,     iconBg: "#FDECEF", iconColor: "#8B1C31", detailStatus: "all" },
+    { key: "present_today",      label: "Present Today",        accent: "#2E7D32",         Icon: UserCheck, iconBg: "#E6F4EA", iconColor: "#2E7D32", detailStatus: "present" },
+    { key: "absent_today",       label: "Absent Today",         accent: "#C62828",         Icon: UserX,     iconBg: "#FDECEF", iconColor: "#C62828", detailStatus: "absent" },
+    { key: "leave_today",        label: "On Leave Today",       accent: "#F57F17",         Icon: Clock,     iconBg: "#FFF4E5", iconColor: "#B26A00", detailStatus: "leave" },
     { key: "pending_leaves",     label: "Pending Leave Requests", accent: "#E64A19",       Icon: FileText,  iconBg: "#FFEBE5", iconColor: "#D84315" },
     { key: "upcoming_holidays",  label: "Upcoming Holidays",    accent: "#1565C0",         Icon: Palmtree,  iconBg: "#E3F2FD", iconColor: "#1565C0" },
 ];
@@ -23,12 +24,72 @@ export default function DashboardPage() {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const [selectedTile, setSelectedTile] = useState(null);
+    const [staffDetails, setStaffDetails] = useState([]);
+    const [detailsLoading, setDetailsLoading] = useState(false);
+    const [detailsError, setDetailsError] = useState("");
+    const [detailsDate, setDetailsDate] = useState("");
+
     useEffect(() => {
         api.get("/api/dashboard/stats")
             .then((res) => setStats(res.data))
             .catch((e) => toast.error(formatApiError(e)))
             .finally(() => setLoading(false));
     }, []);
+
+const openStaffDetails = (tile) => {
+    if (!tile.detailStatus || user?.role !== "admin") {
+        return;
+    }
+
+    setStaffDetails([]);
+    setDetailsError("");
+    setDetailsDate("");
+    setDetailsLoading(true);
+    setSelectedTile(tile);
+};
+
+const closeStaffDetails = () => {
+    setSelectedTile(null);
+};
+
+useEffect(() => {
+    if (!selectedTile) return;
+
+    const controller = new AbortController();
+
+    const fetchStaffDetails = async () => {
+        try {
+            const res = await api.get(
+                "/api/dashboard/attendance-details",
+                {
+                    params: {
+                        status: selectedTile.detailStatus
+                    },
+                    signal: controller.signal
+                }
+            );
+
+            if (!controller.signal.aborted) {
+                setStaffDetails(res.data.staff || []);
+                setDetailsDate(res.data.date || "");
+            }
+        } catch (e) {
+            if (!controller.signal.aborted) {
+                setDetailsError(formatApiError(e));
+            }
+        } finally {
+            if (!controller.signal.aborted) {
+                setDetailsLoading(false);
+            }
+        }
+    };
+
+    fetchStaffDetails();
+
+    return () => controller.abort();
+}, [selectedTile]);
+
 
     const greeting = (() => {
         const h = new Date().getHours();
@@ -53,29 +114,71 @@ export default function DashboardPage() {
                 )}
             </div>
 
-            <div className="dash-grid">
-                {STAT_TILES.map((tile) => {
-                    const value = stats?.[tile.key] ?? 0;
-                    return (
-                        <div
-                            key={tile.key}
-                            className="dash-card"
-                            style={{ borderLeftColor: tile.accent }}
-                            data-testid={`dashboard-stat-${tile.key}`}
-                        >
-                            <div className="dash-card-body">
-                                <p className="dash-card-label">{tile.label}</p>
-                                <p className="dash-card-value" data-testid={`stat-value-${tile.key}`}>
-                                    {loading ? "—" : value}
-                                </p>
-                            </div>
-                            <div className="dash-card-icon" style={{ background: tile.iconBg, color: tile.iconColor }}>
-                                <tile.Icon size={26} strokeWidth={2.4} />
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+            
+<div className="dash-grid">
+    {STAT_TILES.map((tile) => {
+        const value = stats?.[tile.key] ?? 0;
+
+        const isClickable =
+            Boolean(tile.detailStatus) &&
+            user?.role === "admin";
+
+        const CardTag = isClickable ? "button" : "div";
+
+        return (
+            <CardTag
+                key={tile.key}
+                type={isClickable ? "button" : undefined}
+                className={`dash-card ${
+                    isClickable ? "dash-card-clickable" : ""
+                }`}
+                style={{ borderLeftColor: tile.accent }}
+                data-testid={`dashboard-stat-${tile.key}`}
+                onClick={
+                    isClickable
+                        ? () => openStaffDetails(tile)
+                        : undefined
+                }
+                aria-haspopup={
+                    isClickable ? "dialog" : undefined
+                }
+            >
+                <span className="dash-card-body">
+                    <span className="dash-card-label">
+                        {tile.label}
+                    </span>
+
+                    <span
+                        className="dash-card-value"
+                        data-testid={`stat-value-${tile.key}`}
+                    >
+                        {loading ? "—" : stats ? value : "—"}
+                    </span>
+
+                    {isClickable && (
+                        <span className="dash-card-link">
+                            View details
+                            <ChevronRight size={14} />
+                        </span>
+                    )}
+                </span>
+
+                <span
+                    className="dash-card-icon"
+                    style={{
+                        background: tile.iconBg,
+                        color: tile.iconColor
+                    }}
+                >
+                    <tile.Icon
+                        size={26}
+                        strokeWidth={2.4}
+                    />
+                </span>
+            </CardTag>
+        );
+    })}
+</div>
 
             <div className="dash-quick">
                 <div className="dash-quick-head">
@@ -112,6 +215,151 @@ export default function DashboardPage() {
                     </div>
                 </div>
             )}
+
+{selectedTile && (
+    <dialog
+        className="dash-details-modal"
+        aria-labelledby="dash-details-title"
+        ref={(node) => {
+            if (node && !node.open) {
+                node.showModal();
+            }
+        }}
+        onCancel={(e) => {
+            e.preventDefault();
+            closeStaffDetails();
+        }}
+    >
+        {/* Popup header */}
+        <div className="dash-details-header">
+            <div>
+                <p className="dash-details-eyebrow">
+                    ATTENDANCE DETAILS
+                </p>
+
+                <h2
+                    id="dash-details-title"
+                    className="font-brand"
+                >
+                    {selectedTile.label}
+                </h2>
+
+                {detailsDate && (
+                    <p className="dash-details-date">
+                        Date: {detailsDate}
+                    </p>
+                )}
+            </div>
+
+            <button
+                type="button"
+                className="dash-details-close"
+                onClick={closeStaffDetails}
+                aria-label="Close attendance details"
+            >
+                <X size={22} />
+            </button>
+        </div>
+
+        {/* Popup content */}
+        <div className="dash-details-content">
+            {detailsLoading ? (
+                <div className="dash-details-message">
+                    Loading staff details...
+                </div>
+            ) : detailsError ? (
+                <div className="dash-details-error" role="alert">
+                    {detailsError}
+                </div>
+            ) : staffDetails.length === 0 ? (
+                <div className="dash-details-message">
+                    <Users size={36} />
+                    <h3>No staff records found</h3>
+                    <p>
+                        There are no staff members in this
+                        category for the selected date.
+                    </p>
+                </div>
+            ) : (
+                <>
+                    <p className="dash-details-count">
+                        Total: {staffDetails.length} staff
+                    </p>
+
+                    <div className="dash-details-table-wrap">
+                        <table className="dash-details-table">
+                            <thead>
+                                <tr>
+                                    <th>Agent ID</th>
+                                    <th>Staff Name</th>
+                                    <th>Position</th>
+                                    <th>Shift</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {staffDetails.map((staff) => (
+                                    <tr key={staff.agent_id}>
+                                        <td>
+                                            {staff.agent_id}
+                                        </td>
+
+                                        <td>
+                                            <strong>
+                                                {staff.display_name ||
+                                                    staff.fullname}
+                                            </strong>
+                                        </td>
+
+                                        <td>
+                                            {staff.position || "—"}
+                                        </td>
+
+                                        <td>
+                                            {staff.shift || "—"}
+                                        </td>
+
+                                        <td>
+                                            <span
+                                                className={
+                                                    `dash-detail-status ` +
+                                                    `dash-detail-status-${staff.status}`
+                                                }
+                                            >
+                                                {{
+                                                    present: "Present",
+                                                    absent: "Absent",
+                                                    leave: "On Leave",
+                                                    standby: "Standby",
+                                                    off: "Off",
+                                                    unrecorded: "Unrecorded"
+                                                }[staff.status] ||
+                                                    staff.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
+        </div>
+
+        {/* Popup footer */}
+        <div className="dash-details-footer">
+            <button
+                type="button"
+                className="dash-details-close-btn"
+                onClick={closeStaffDetails}
+            >
+                Close
+            </button>
+        </div>
+    </dialog>
+)}
+
         </div>
     );
 }

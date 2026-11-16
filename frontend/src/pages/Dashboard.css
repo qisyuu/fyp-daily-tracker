@@ -195,3 +195,280 @@
 .dash-recent-status-standby { background: #0277BD; }
 .dash-recent-status-off { background: #9A8B8D; }
 .dash-recent-date { font-size: 0.78rem; color: hsl(var(--muted-foreground)); white-space: nowrap; }
+
+
+/* =========================================
+   DT-001: Interactive Dashboard Cards
+   ========================================= */
+
+.dash-card-clickable {
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.dash-card-clickable:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.dash-card-clickable:focus-visible {
+    outline: 2px solid #8B1C31;
+    outline-offset: 3px;
+}
+
+.dash-card-body,
+.dash-card-label,
+.dash-card-value {
+    display: block;
+}
+
+.dash-card-link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #777;
+}
+
+.dash-card-clickable:hover .dash-card-link {
+    color: #8B1C31;
+}
+
+/* =========================================
+   DT-001: Attendance Details Modal
+   ========================================= */
+
+.dash-details-modal {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: min(850px, calc(100% - 32px));
+    max-height: 85vh;
+    padding: 0;
+    border: none;
+    border-radius: 16px;
+    background: #ffffff;
+    color: #1f2937;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    overflow: auto;
+}
+
+.dash-details-modal::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(3px);
+}
+
+/* Modal header */
+
+.dash-details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 24px;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.dash-details-eyebrow {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #8B1C31;
+}
+
+.dash-details-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #222222;
+}
+
+.dash-details-date {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: #777777;
+}
+
+.dash-details-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: #f5f5f5;
+    color: #555555;
+    cursor: pointer;
+}
+
+.dash-details-close:hover {
+    background: #FDECEF;
+    color: #8B1C31;
+}
+
+/* Modal content */
+
+.dash-details-content {
+    padding: 24px;
+}
+
+.dash-details-count {
+    margin: 0 0 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #555555;
+}
+
+.dash-details-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 160px;
+    padding: 24px;
+    text-align: center;
+    color: #777777;
+}
+
+.dash-details-message h3 {
+    margin: 0;
+    color: #333333;
+    font-size: 16px;
+}
+
+.dash-details-message p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.dash-details-error {
+    padding: 16px;
+    border-radius: 8px;
+    background: #FDECEF;
+    color: #C62828;
+    font-size: 14px;
+}
+
+/* Staff details table */
+
+.dash-details-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.dash-details-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.dash-details-table th {
+    padding: 14px 12px;
+    background: #f8f8f8;
+    color: #666666;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.dash-details-table td {
+    padding: 15px 12px;
+    border-bottom: 1px solid #eeeeee;
+    font-size: 13px;
+    color: #333333;
+}
+
+.dash-details-table tbody tr:hover {
+    background: #fafafa;
+}
+
+/* Attendance status labels */
+
+.dash-detail-status {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.dash-detail-status-present {
+    background: #E6F4EA;
+    color: #2E7D32;
+}
+
+.dash-detail-status-absent {
+    background: #FDECEF;
+    color: #C62828;
+}
+
+.dash-detail-status-leave {
+    background: #FFF4E5;
+    color: #B26A00;
+}
+
+.dash-detail-status-standby {
+    background: #E3F2FD;
+    color: #1565C0;
+}
+
+.dash-detail-status-off,
+.dash-detail-status-unrecorded {
+    background: #f0f0f0;
+    color: #666666;
+}
+
+/* Modal footer */
+
+.dash-details-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 16px 24px;
+    border-top: 1px solid #eeeeee;
+}
+
+.dash-details-close-btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    background: #8B1C31;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dash-details-close-btn:hover {
+    background: #701629;
+}
+
+/* Mobile responsiveness */
+
+@media (max-width: 600px) {
+    .dash-details-header,
+    .dash-details-content {
+        padding: 16px;
+    }
+
+    .dash-details-header h2 {
+        font-size: 20px;
+    }
+
+    .dash-details-footer {
+        padding: 12px 16px;
+    }
+}

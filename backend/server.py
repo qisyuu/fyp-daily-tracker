@@ -440,10 +440,38 @@ async def dashboard_stats(user: dict = Depends(get_current_user)):
     today = datetime.now(timezone.utc).date()
     next_30 = (today + timedelta(days=30)).isoformat()
 
-    total_staff = await db.staff.count_documents({"status": "active"})
-    present_today = await db.attendance.count_documents({"date": today_iso, "status": "present"})
-    absent_today = await db.attendance.count_documents({"date": today_iso, "status": "absent"})
-    leave_today = await db.attendance.count_documents({"date": today_iso, "status": "leave"})
+    # Get active staff IDs
+    active_staff = await db.staff.find(
+        {"status": "active"},
+        {"agent_id": 1, "_id": 0}
+    ).to_list(length=None)
+
+    active_agent_ids = [
+        staff["agent_id"]
+        for staff in active_staff
+    ]
+
+    #total_staff = await db.staff.count_documents({"status": "active"})
+    total_staff = len(active_agent_ids)
+    #present_today = await db.attendance.count_documents({"date": today_iso, "status": "present"})
+    # Count attendance for active staff only
+    present_today = await db.attendance.count_documents({
+        "date": today_iso,
+        "status": "present",
+        "agent_id": {"$in": active_agent_ids}
+    })
+    #absent_today = await db.attendance.count_documents({"date": today_iso, "status": "absent"})
+    absent_today = await db.attendance.count_documents({
+        "date": today_iso,
+        "status": "absent",
+        "agent_id": {"$in": active_agent_ids}
+    })
+    #leave_today = await db.attendance.count_documents({"date": today_iso, "status": "leave"})
+    leave_today = await db.attendance.count_documents({
+        "date": today_iso,
+        "status": "leave",
+        "agent_id": {"$in": active_agent_ids}
+    })
     upcoming_holidays = await db.holidays.count_documents({
         "date": {"$gte": today_iso, "$lte": next_30}
     })
@@ -472,6 +500,71 @@ async def dashboard_stats(user: dict = Depends(get_current_user)):
         "today_date": today_iso,
         "today_holiday": today_holiday,
         "recent_attendance": recent,
+    }
+
+# ----- Dashboard Attendance Details -----
+@dashboard_router.get("/attendance-details")
+async def dashboard_attendance_details(
+    status: Literal["all", "present", "absent", "leave"],
+    admin: dict = Depends(require_admin)
+):
+    # Use the same date as the existing dashboard
+    today_iso = datetime.now(timezone.utc).date().isoformat()
+
+    # Get all currently active staff
+    staff_docs = await db.staff.find(
+        {"status": "active"},
+        {"_id": 0}
+    ).sort("agent_id", 1).to_list(length=None)
+
+    # Get today's attendance records
+    attendance_docs = await db.attendance.find(
+        {"date": today_iso},
+        {"_id": 0}
+    ).to_list(length=None)
+
+    # Match attendance records using Agent ID
+    attendance_map = {
+        record["agent_id"]: record
+        for record in attendance_docs
+    }
+
+    staff_details = []
+
+    for staff in staff_docs:
+        agent_id = staff["agent_id"]
+
+        attendance = attendance_map.get(agent_id)
+
+        # Missing attendance does not mean absent
+        attendance_status = (
+            attendance["status"]
+            if attendance
+            else "unrecorded"
+        )
+
+        # Filter staff according to selected card
+        if status != "all" and attendance_status != status:
+            continue
+
+        staff_details.append({
+            "agent_id": agent_id,
+            "display_name": staff.get("display_name", ""),
+            "fullname": staff.get("fullname", ""),
+            "position": staff.get("position", ""),
+            "shift": (
+                attendance.get("shift") or staff.get("shift", "")
+                if attendance
+                else staff.get("shift", "")
+            ),
+            "status": attendance_status
+        })
+
+    return {
+        "date": today_iso,
+        "status": status,
+        "total": len(staff_details),
+        "staff": staff_details
     }
 
 
